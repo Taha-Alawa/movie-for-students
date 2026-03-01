@@ -79,7 +79,7 @@ const Movies = () => {
       <TopPart title="الأفلام">
         <Button text="إضافة فيلم" onClick={openAddModal} />
       </TopPart>
-      <section className={styles.grid}>
+      <section className={styles.moviesList}>
         {movies.map((movie) => (
           <article key={movie.id} className={styles.card}>
             <h2 className={styles.cardTitle}>{movie.title}</h2>
