@@ -1,22 +1,32 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import GenreModal from "./GenreModal/GenreModal"
 import DeleteModal from "../../components/DeleteModal/DeleteModal"
 import TopPart from "../../components/TopPart/TopPart"
 import Button from "../../components/Button/Button"
 import styles from "./Genres.module.css"
-
-const DUMMY_GENRES = [
-  { id: 1, name: "أكشن" },
-  { id: 2, name: "كوميدي" },
-  { id: 3, name: "دراما" },
-]
+import { getGenres, addGenre, updateGenre, deleteGenre } from "../../services/GenresService"
 
 const Genres = () => {
   const [defaultModalOpen, setDefaultModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedGenre, setSelectedGenre] = useState(null)
   const [genreToDelete, setGenreToDelete] = useState(null)
-  const [genres, setGenres] = useState(DUMMY_GENRES)
+  const [genres, setGenres] = useState([])
+
+  const fetchGenres = async () => {
+    try {
+      const data = await getGenres()
+      setGenres(data)
+    } catch (error) {
+      console.error("Error fetching genres", error)
+    }
+  }
+
+  useEffect(() => {
+    (async () => {
+      await fetchGenres()
+    })()
+  }, [])
 
   const openAddModal = () => {
     setSelectedGenre(null)
@@ -43,17 +53,36 @@ const Genres = () => {
     setGenreToDelete(null)
   }
 
-  const handleConfirmDelete = () => {
-    console.log("Delete genre", genreToDelete)
-    closeDeleteModal()
+  const handleConfirmDelete = async () => {
+    if (genreToDelete) {
+      try {
+        await deleteGenre(genreToDelete.id)
+        fetchGenres()
+        closeDeleteModal()
+
+      } catch (error) {
+        console.error("Error deleting genre", error)
+      }
+    }
   }
 
-  const handleGenreSubmit = (data) => {
+  const handleGenreSubmit = async (data) => {
     if (data.id != null) {
-      setGenres((prev) => prev.map((g) => (g.id === data.id ? { ...g, name: data.name } : g)))
+      try {
+        await updateGenre(data)
+        fetchGenres()
+        closeDefaultModal()
+      } catch (error) {
+        console.error("Error updating genre", error)
+      }
     } else {
-      const nextId = (genres.length > 0 ? Math.max(...genres.map((g) => g.id)) : 0) + 1
-      setGenres((prev) => [...prev, { id: nextId, name: data.name }])
+      try {
+        await addGenre(data)
+        fetchGenres()
+        closeDefaultModal()
+      } catch (error) {
+        console.error("Error adding genre", error)
+      }
     }
   }
 

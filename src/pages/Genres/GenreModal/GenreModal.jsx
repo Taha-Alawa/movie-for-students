@@ -26,9 +26,14 @@ const GenreModal = ({ isOpen, onClose, genre, onSubmit }) => {
     }
   }, [isOpen, genre, reset])
 
-  const handleFormSubmit = (data) => {
-    onSubmit({ name: data.name, id: genre?.id })
-    onClose()
+  const handleFormSubmit = async (data) => {
+    try {
+      await onSubmit({ name: data.name, id: genre?.id })
+      onClose()
+
+    } catch (error) {
+      console.error("Error submitting genre", error)
+    }
   }
 
   const title = genre ? `التصنيف: ${genre.name}` : "إضافة تصنيف"

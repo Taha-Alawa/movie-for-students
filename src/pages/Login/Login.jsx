@@ -5,8 +5,11 @@ import Input from "../../components/Input/Input"
 import Button from "../../components/Button/Button"
 import { loginSchema } from "./loginSchema"
 import styles from "./Login.module.css"
-
+import { login } from "../../services/LoginService"
+import { useNavigate } from "react-router"
 const Login = () => {
+  const navigate = useNavigate()
+  
   const {
     register,
     handleSubmit,
@@ -17,8 +20,15 @@ const Login = () => {
     defaultValues: { email: "", password: "" },
   })
 
-  const onSubmit = (data) => {
-    console.log(data)
+  const onSubmit = async (data) => {
+    try {
+      const response = await login(data)
+      console.log(response)
+      localStorage.setItem("token", response.token)
+      navigate("/genres")
+    } catch (error) {
+      console.error("Error logging in", error)
+    }
   }
 
   return (

@@ -1,30 +1,44 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import MovieModal from "./MovieModal/MovieModal"
 import DeleteModal from "../../components/DeleteModal/DeleteModal"
 import TopPart from "../../components/TopPart/TopPart"
 import Button from "../../components/Button/Button"
 import styles from "./Movies.module.css"
-
-const GENRES = [
-  { id: 1, name: "أكشن" },
-  { id: 2, name: "كوميدي" },
-  { id: 3, name: "دراما" },
-]
-
-const DUMMY_MOVIES = [
-  { id: 1, title: "فيلم الأول", year: 2020, rate: 4.5, location: "المخزن أ", genreId: 1, genreName: "أكشن" },
-  { id: 2, title: "فيلم الثاني", year: 2021, rate: 4.2, location: "المخزن ب", genreId: 2, genreName: "كوميدي" },
-  { id: 3, title: "فيلم الثالث", year: 2022, rate: 4.8, location: "المخزن أ", genreId: 1, genreName: "أكشن" },
-]
-
-const getGenreName = (genreId) => GENRES.find((g) => g.id === genreId)?.name ?? ""
+import { getMovies, addMovie, updateMovie, deleteMovie } from "../../services/MoviesService"
+import { getGenres } from "../../services/GenresService"
 
 const Movies = () => {
   const [defaultModalOpen, setDefaultModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [movieToDelete, setMovieToDelete] = useState(null)
-  const [movies, setMovies] = useState(DUMMY_MOVIES)
+  const [movies, setMovies] = useState([])
+  const [genres, setGenres] = useState([])
+
+  const fetchGenres = async () => {
+    try {
+      const data = await getGenres()
+      setGenres(data)
+    } catch (error) {
+      console.error("Error fetching genres", error)
+    }
+  }
+
+  const fetchMovies = async () => {
+    try {
+      const data = await getMovies()
+      setMovies(data)
+    } catch (error) {
+      console.error("Error fetching movies", error)
+    }
+  }
+
+  useEffect(() => {
+    (async () => {
+      await fetchMovies()
+      await fetchGenres()
+    })()
+  }, [])
 
   const openAddModal = () => {
     setSelectedMovie(null)
@@ -51,26 +65,35 @@ const Movies = () => {
     setMovieToDelete(null)
   }
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (movieToDelete) {
-      setMovies((prev) => prev.filter((m) => m.id !== movieToDelete.id))
+      try {
+        await deleteMovie(movieToDelete.id)
+        fetchMovies()
+        closeDeleteModal()
+      } catch (error) {
+        console.error("Error deleting movie", error)
+      }
     }
-    closeDeleteModal()
   }
 
-  const handleMovieSubmit = (data) => {
-    const genreName = getGenreName(data.genreId)
+  const handleMovieSubmit = async (data) => {
     if (data.id != null) {
-      setMovies((prev) =>
-        prev.map((m) =>
-          m.id === data.id
-            ? { ...m, ...data, genreName }
-            : m
-        )
-      )
+    try {
+        await updateMovie(data)
+        fetchMovies()
+        closeDefaultModal()
+      } catch (error) {
+        console.error("Error updating movie", error)
+      }
     } else {
-      const nextId = (movies.length > 0 ? Math.max(...movies.map((m) => m.id)) : 0) + 1
-      setMovies((prev) => [...prev, { ...data, id: nextId, genreName }])
+      try {
+        await addMovie(data)
+        fetchMovies()
+        closeDefaultModal()
+      } catch (error) {
+        console.error("Error adding movie", error)
+      }
     }
   }
 
@@ -79,12 +102,13 @@ const Movies = () => {
       <TopPart title="الأفلام">
         <Button text="إضافة فيلم" onClick={openAddModal} />
       </TopPart>
-      <section className={styles.grid}>
+      <section className={styles.moviesList}>
         {movies.map((movie) => (
           <article key={movie.id} className={styles.card}>
             <h2 className={styles.cardTitle}>{movie.title}</h2>
             <p className={styles.meta}>السنة: {movie.year} | التقييم: {movie.rate}</p>
             <p className={styles.location}>{movie.location}</p>
+            <p className={styles.genre}>{movie.genre.name}</p>
             <div className={styles.cardActions}>
               <Button text="تعديل" onClick={() => openEditModal(movie)} variant="secondary" />
               <Button text="حذف" onClick={() => openDeleteModal(movie)} variant="danger" />
@@ -96,7 +120,7 @@ const Movies = () => {
         isOpen={defaultModalOpen}
         onClose={closeDefaultModal}
         movie={selectedMovie}
-        genres={GENRES}
+        genres={genres}
         onSubmit={handleMovieSubmit}
       />
       <DeleteModal

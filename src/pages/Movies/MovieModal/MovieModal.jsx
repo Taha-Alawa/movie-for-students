@@ -51,16 +51,20 @@ const MovieModal = ({ isOpen, onClose, movie, genres, onSubmit }) => {
     }
   }, [isOpen, movie, genres, reset])
 
-  const handleFormSubmit = (data) => {
-    onSubmit({
-      title: data.title,
-      year: Number(data.year),
-      rate: Number(data.rate),
-      location: data.location,
-      genreId: Number(data.genreId),
-      id: movie?.id,
-    })
-    onClose()
+  const handleFormSubmit = async (data) => {
+    try {
+      await onSubmit({
+        title: data.title,
+        year: Number(data.year),
+        rate: Number(data.rate),
+        location: data.location,
+        genreId: Number(data.genreId),
+        id: movie?.id,
+      })
+      onClose()
+    } catch (error) {
+      console.error("Error submitting movie", error)
+    }
   }
 
   const title = movie ? movie.title : "إضافة فيلم"
